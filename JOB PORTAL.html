@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Job Portal</title>
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #f2f2f2;
+}
+header {
+  background: #222;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 25px;
+}
+nav {
+  display: flex;
+  justify-content: center;
+  background: linear-gradient(90deg, #4caf50, #2196f3);
+  padding-right: 20px;
+  flex-wrap: wrap;
+}
+nav a {
+  padding: 14px 20px;
+  color: white;
+  text-decoration: none;
+  display: block;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+nav a:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-bottom: 2px solid white;
+}
+section {
+  padding: 20px;
+}
+.card {
+  background: white;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+button {
+  padding: 8px 15px;
+  border: none;
+  cursor: pointer;
+  background: #1e88e5;
+  color: white;
+  border-radius: 5px;
+}
+button:hover {
+  background: #1565c0;
+}
+.hidden {
+  display: none;
+}
+input, select, textarea {
+  padding: 8px;
+  width: 95%;
+  margin-top: 5px;
+  margin-bottom: 15px;
+}
+.home-banner {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-top: 15px;
+}
+</style>
+</head>
+<body>
+
+<header>JOB PORTAL</header>
+
+<nav>
+  <a onclick="showPage('home')">Home</a>
+  <a onclick="showPage('login')">Login</a>
+  <a onclick="showPage('jobs')">Job Listings</a>
+  <a onclick="showPage('postjob')">Post Job</a>
+  <a onclick="showPage('profile')">Profile</a>
+  <a onclick="showPage('filter')">Search Jobs</a>
+  <a onclick="showPage('contact')">Contact</a>
+  <a onclick="showPage('admin')">Admin</a>
+</nav>
+
+<section id="home">
+  <h2>Welcome to the Job Portal</h2>
+  <p>Your gateway to countless career opportunities. Whether you're a fresh graduate or a seasoned professional, start your job search or post openings with ease.</p>
+ 
+  <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80" style="width:100%; border-radius:10px; margin-top: 20px;" alt="Teamwork and Jobs" />
+
+</section>
+
+<section id="profile" class="hidden">
+  <h2>Profile Management</h2>
+  <div id="profileView">
+    <p><b>Username:</b> <span id="profileUsername">-</span></p>
+    <p><b>Role:</b> <span id="profileRole">-</span></p>
+    <p><b>Resume:</b> <span id="profileResume">Not uploaded</span></p>
+    <button onclick="showEditProfile()">Edit Profile</button>
+    <button onclick="document.getElementById('resumeUpload').click()">Upload Resume</button>
+    <input type="file" id="resumeUpload" style="display:none" onchange="uploadResume(event)">
+  </div>
+  <div id="profileEdit" class="hidden">
+    <label>Username:</label>
+    <input id="editUsername" type="text">
+    <button onclick="saveProfile()">Save</button>
+    <button onclick="cancelEdit()">Cancel</button>
+  </div>
+  <h3>Applied Jobs</h3>
+  <div id="appliedJobs">
+    <p>No jobs applied yet.</p>
+  </div>
+</section>
+
+<section id="filter" class="hidden">
+  <h2>Search / Filter Jobs</h2>
+  <input id="searchTitle" placeholder="Search by title">
+  <input id="searchLocation" placeholder="Search by location">
+  <button onclick="searchJobs()">Search</button>
+  <div id="searchResults"></div>
+</section>
+
+<section id="contact" class="hidden">
+  <h2>Contact / Feedback</h2>
+  <label>Your Name:</label>
+  <input id="contactName">
+  <label>Message:</label>
+  <textarea id="contactMsg"></textarea>
+  <button onclick="submitContact()">Submit</button>
+</section>
+
+<section id="admin" class="hidden">
+  <h2>Admin Dashboard</h2>
+  <p>✔ View all posted jobs and applications</p>
+  <p>✔ Remove jobs</p>
+  <div id="adminJobsContainer"></div>
+</section>
+
+<section id="login" class="hidden">
+  <h2>Login</h2>
+  <label>Select Role:</label>
+  <select id="roleSelect">
+    <option value="seeker">Job Seeker</option>
+    <option value="employer">Employer</option>
+    <option value="admin">Admin</option>
+  </select>
+  <label>Username:</label>
+  <input id="username" type="text" />
+  <label>Password:</label>
+  <input id="password" type="password" />
+  <button onclick="login()">Login</button>
+  <p id="loginMsg"></p>
+</section>
+
+<section id="jobs" class="hidden">
+  <h2>Available Jobs</h2>
+  <div id="jobContainer"></div>
+</section>
+
+<section id="postjob" class="hidden">
+  <h2>Post a Job (Employer Only)</h2>
+  <label>Job Title:</label>
+  <input id="jobTitle" />
+  <label>Company Name:</label>
+  <input id="companyName" />
+  <label>Location:</label>
+  <input id="location" />
+  <label>Description:</label>
+  <textarea id="jobDesc"></textarea>
+  <button onclick="postJob()">Submit Job</button>
+  <p id="postMsg"></p>
+</section>
+
+<script>
+let currentUser = null;
+
+let jobs = [
+  { title: "Software Developer", company: "Infosys", location: "Bangalore", desc: "Full stack role.", applied: [] },
+  { title: "Web Designer", company: "TCS", location: "Hyderabad", desc: "UI/UX based.", applied: [] },
+  { title: "Data Analyst", company: "Accenture", location: "Chennai", desc: "Data visualization.", applied: [] }
+];
+
+function showPage(page) {
+  document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
+  document.getElementById(page).classList.remove('hidden');
+  
+  if(page === 'jobs') loadJobs();
+  if(page === 'profile' && currentUser) loadProfile();
+  if(page === 'admin') loadAdminDashboard();
+}
+
+function login() {
+  const role = document.getElementById('roleSelect').value;
+  const user = document.getElementById('username').value;
+  const pass = document.getElementById('password').value;
+
+  if(user === '' || pass === '') {
+    document.getElementById('loginMsg').innerText = "Enter both fields";
+    return;
+  }
+  currentUser = { username: user, role: role };
+  document.getElementById('loginMsg').innerText = "Login Successful!";
+  loadProfile();
+}
+
+function loadJobs() {
+  let box = document.getElementById('jobContainer');
+  box.innerHTML = '';
+  jobs.forEach((job, index) => {
+    box.innerHTML += `
+      <div class='card'>
+        <h3>${job.title}</h3>
+        <p><b>Company:</b> ${job.company}</p>
+        <p><b>Location:</b> ${job.location}</p>
+        <p>${job.desc}</p>
+        <button onclick="applyJob(${index})">Apply</button>
+      </div>
+    `;
+  });
+}
+
+function applyJob(i) {
+  if(!currentUser) return alert("Login first!");
+  if(currentUser.role !== 'seeker') return alert("Only job seekers can apply");
+  if(jobs[i].applied.includes(currentUser.username)) return alert("Already applied!");
+  jobs[i].applied.push(currentUser.username);
+  alert("Applied Successfully!");
+  loadProfile();
+}
+
+function postJob() {
+  if(!currentUser || currentUser.role !== 'employer') {
+    document.getElementById('postMsg').innerText = "Only employers can post jobs";
+    return;
+  }
+
+  if(jobTitle.value === '' || companyName.value === '' || location.value === '' || jobDesc.value === '') {
+    document.getElementById('postMsg').innerText = "Fill all fields!";
+    return;
+  }
+
+  jobs.push({
+    title: jobTitle.value,
+    company: companyName.value,
+    location: location.value,
+    desc: jobDesc.value,
+    applied: []
+  });
+
+  document.getElementById('postMsg').innerText = "Job Posted!";
+  jobTitle.value = '';
+  companyName.value = '';
+  location.value = '';
+  jobDesc.value = '';
+}
+
+function showEditProfile() {
+  if(!currentUser) return alert("Login first!");
+  document.getElementById('profileView').classList.add('hidden');
+  document.getElementById('profileEdit').classList.remove('hidden');
+  document.getElementById('editUsername').value = currentUser.username;
+}
+
+function saveProfile() {
+  const newUsername = document.getElementById('editUsername').value;
+  if(newUsername === '') return alert("Username cannot be empty");
+  
+  const oldUsername = currentUser.username;
+  currentUser.username = newUsername;
+
+  jobs.forEach(job => {
+    const index = job.applied.indexOf(oldUsername);
+    if(index !== -1) job.applied[index] = newUsername;
+  });
+
+  document.getElementById('profileView').classList.remove('hidden');
+  document.getElementById('profileEdit').classList.add('hidden');
+  loadProfile();
+  alert("Profile updated!");
+}
+
+function cancelEdit() {
+  document.getElementById('profileView').classList.remove('hidden');
+  document.getElementById('profileEdit').classList.add('hidden');
+}
+
+function uploadResume(event) {
+  if(!currentUser) return alert("Login first!");
+  const file = event.target.files[0];
+  if(file) {
+    currentUser.resume = file.name;
+    alert("Resume uploaded: " + file.name);
+    loadProfile();
+  }
+}
+
+function loadProfile() {
+  if(!currentUser) return;
+  document.getElementById('profileUsername').innerText = currentUser.username;
+  document.getElementById('profileRole').innerText = currentUser.role;
+  document.getElementById('profileResume').innerText = currentUser.resume || "Not uploaded";
+
+  const container = document.getElementById('appliedJobs');
+  container.innerHTML = '';
+  let applied = jobs.filter(job => job.applied.includes(currentUser.username));
+  if(applied.length === 0) {
+    container.innerHTML = "<p>No jobs applied yet.</p>";
+  } else {
+    applied.forEach(job => {
+      container.innerHTML += `<div class='card'>
+        <h4>${job.title}</h4>
+        <p><b>Company:</b> ${job.company}</p>
+        <p><b>Location:</b> ${job.location}</p>
+      </div>`;
+    });
+  }
+}
+
+function searchJobs() {
+  const title = document.getElementById('searchTitle').value.toLowerCase();
+  const location = document.getElementById('searchLocation').value.toLowerCase();
+  const results = jobs.filter(job => 
+    job.title.toLowerCase().includes(title) &&
+    job.location.toLowerCase().includes(location)
+  );
+  const container = document.getElementById('searchResults');
+  container.innerHTML = '';
+  if(results.length === 0) {
+    container.innerHTML = "<p>No matching jobs found.</p>";
+  } else {
+    results.forEach(job => {
+      container.innerHTML += `<div class='card'>
+        <h3>${job.title}</h3>
+        <p><b>Company:</b> ${job.company}</p>
+        <p><b>Location:</b> ${job.location}</p>
+        <p>${job.desc}</p>
+      </div>`;
+    });
+  }
+}
+
+function submitContact() {
+  const name = document.getElementById('contactName').value;
+  const msg = document.getElementById('contactMsg').value;
+  if(name === '' || msg === '') return alert("Fill all fields!");
+  alert("Thank you, " + name + "! We received your message.");
+  document.getElementById('contactName').value = '';
+  document.getElementById('contactMsg').value = '';
+}
+
+
+function loadAdminDashboard() {
+  if(!currentUser || currentUser.role !== 'admin') {
+    alert("Access denied! Only admin can access this page.");
+    showPage('home');
+    return;
+  }
+
+  const container = document.getElementById('adminJobsContainer');
+  container.innerHTML = '';
+
+  if(jobs.length === 0) {
+    container.innerHTML = "<p>No jobs posted yet.</p>";
+    return;
+  }
+
+  jobs.forEach((job, index) => {
+    let appliedList = job.applied.length > 0 
+      ? job.applied.join(", ")
+      : "No applications yet";
+    
+    container.innerHTML += `
+      <div class='card'>
+        <h3>${job.title}</h3>
+        <p><b>Company:</b> ${job.company}</p>
+        <p><b>Location:</b> ${job.location}</p>
+        <p>${job.desc}</p>
+        <p><b>Applied Users:</b> ${appliedList}</p>
+        <button onclick="removeJob(${index})">Remove Job</button>
+      </div>
+    `;
+  });
+}
+
+function removeJob(i) {
+  if(!currentUser || currentUser.role !== 'admin') return;
+  const confirmDelete = confirm("Are you sure you want to remove this job?");
+  if(confirmDelete) {
+    jobs.splice(i, 1);
+    loadAdminDashboard();
+    alert("Job removed successfully!");
+  }
+}
+</script>
+
+<footer style="background:#2d2d2d; color:white; text-align:center; padding:20px 0; margin-top:40px;">
+  <h3>Need More Support?</h3>
+  <p>📞 +91 98765 43210 | ✉️ support@jobportal.com</p>
+  <p style="font-size:12px; color:#bbbbbb;">© 2025 JobPortal</p>
+</footer>
+
+</body>
+</html>
